@@ -4,34 +4,48 @@
 
 <?php
 if (isset($_GET['id'])) {
-    include("../../inc_db_params.php");
+    include("../inc_db_params_crud.php");
     $ShowTable = TRUE;
 
-    /* change db to world db */
-    mysqli_select_db($conn, $db_name);
+    if ($using_mysql) {
+        /* change db to world db */
+        mysqli_select_db($conn, $db_name);
 
-    if ($conn !== FALSE) {
+        if ($conn !== FALSE) {
+            $id = $_GET['id'];
+
+            /* create a prepared statement */
+            if ($stmt = mysqli_prepare($conn, "SELECT * FROM Students WHERE StudentId=?")) {
+
+                /* bind parameters for markers */
+                mysqli_stmt_bind_param($stmt, "s", $id);
+
+                /* execute query */
+                mysqli_stmt_execute($stmt);
+
+                /* bind variables to prepared statement */
+                mysqli_stmt_bind_result($stmt, $StudentId, $FirstName, $LastName, $School);
+
+                /* fetch value */
+                mysqli_stmt_fetch($stmt);
+            }
+        };
+
+        mysqli_stmt_close($stmt);
+        mysqli_close($conn);
+    } else {
         $id = $_GET['id'];
+        
+        $prepared_stmt = $db->prepare("SELECT * FROM Students WHERE StudentId=?");
+        $prepared_stmt->bindParam(1, $id);
+        $res = $prepared_stmt->execute();
+        $row = $res->fetchArray(SQLITE3_NUM);
 
-        /* create a prepared statement */
-        if ($stmt = mysqli_prepare($conn, "SELECT * FROM Students WHERE StudentId=?")) {
-
-            /* bind parameters for markers */
-            mysqli_stmt_bind_param($stmt, "s", $id);
-
-            /* execute query */
-            mysqli_stmt_execute($stmt);
-
-            /* bind variables to prepared statement */
-            mysqli_stmt_bind_result($stmt, $StudentId, $FirstName, $LastName, $School);
-
-            /* fetch value */
-            mysqli_stmt_fetch($stmt);
-        }
-    };
-
-    mysqli_stmt_close($stmt);
-    mysqli_close($conn);
+        $StudentId = $row[0];
+        $FirstName = $row[1];
+        $LastName = $row[2];
+        $School = $row[3];
+    }
 } else {
     $ShowTable = FALSE;
     $StudentId = "";
